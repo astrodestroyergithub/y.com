@@ -1,0 +1,16 @@
+{
+  "name": "Y.com — The Unbiased Global Town Square",
+  "short_name": "Y.com",
+  "description": "The non-biased global citizen social platform powered by Open Consensus, Nimbak AI 3.5, and Nimbak Imagine.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#06b6d4",
+  "icons": [
+    {
+      "src": "assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
