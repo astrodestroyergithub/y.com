@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>Y — The Unbiased Global Town Square</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Y — The Unbiased Global Town Square (Powered by Nimbak AI)</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="description" content="Y.com is the open, non-biased global social platform and competitor to X.com — featuring Nimbak AI, Nimbak Imagine, Citizen Context, Y Echoes, and 100% algorithmic transparency." />
   <meta name="theme-color" content="#000000" />
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -360,7 +361,15 @@
               </h1>
               <p class="text-xs y-text-secondary">Ranked by cross-perspective consensus & open citizen weights — never paid boost</p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <button type="button" onclick="refreshDynamicStreamNow()" id="liveSyncFeedBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition" title="Fetch fresh live broadcasts from global APIs">
+                <i id="liveSyncSpinIcon" class="fa-solid fa-arrows-rotate"></i>
+                <span class="hidden sm:inline">Fetch New Posts</span>
+              </button>
+              <button type="button" onclick="toggleAutoStream()" id="autoStreamToggleBtn" class="px-2.5 py-1.5 rounded-full text-xs font-mono bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 border border-violet-500/30 flex items-center gap-1.5 transition" title="Toggle real-time incoming broadcast stream">
+                <span id="autoStreamDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="autoStreamLabel">Auto-Stream: ON</span>
+              </button>
               <button type="button" onclick="toggleAlgoTuner()" id="algoTunerBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5 transition">
                 <i class="fa-solid fa-sliders"></i>
                 <span>Tune Algorithm</span>
@@ -530,8 +539,40 @@
           </div>
         </div>
 
+        <!-- LIVE MULTI-API TELEMETRY & INCOMING STREAM QUEUE -->
+        <div id="apiStatusStrip" class="px-4 py-2 border-b y-border bg-gradient-to-r from-cyan-950/35 via-slate-900/70 to-violet-950/35 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 font-mono border border-cyan-500/30">
+              <i class="fa-solid fa-satellite-dish text-[10px]"></i>
+              <span id="apiMeshStatusBadge">MESH APIS CONNECTED: 6/6 LIVE</span>
+            </span>
+            <span id="apiLastSyncedText" class="y-text-secondary font-mono">Sources: Spaceflightv4 • DEV.to • HackerNews • DummyJSON • RandomUser • WikiREST</span>
+          </div>
+          <button type="button" onclick="shuffleAndDiscoverUsers()" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+            <i class="fa-solid fa-shuffle text-[10px]"></i>
+            <span>New Users & Feed Mix</span>
+          </button>
+        </div>
+
+        <!-- QUEUED LIVE BROADCASTS NOTIFICATION PILL -->
+        <div id="incomingQueueBanner" class="hidden px-4 py-2.5 border-b y-border bg-cyan-500/10 text-center">
+          <button type="button" onclick="flushIncomingPostsQueue()" class="w-full py-1.5 px-4 rounded-full bg-gradient-to-r from-cyan-500/25 to-emerald-500/25 hover:from-cyan-500/35 hover:to-emerald-500/35 border border-cyan-400/40 text-cyan-200 text-xs font-bold flex items-center justify-center gap-2 shadow-lg transition">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+            <span id="incomingQueueCountText">⚡ 3 new global broadcasts from different citizens — Click to reveal in stream</span>
+            <i class="fa-solid fa-arrow-up"></i>
+          </button>
+        </div>
+
         <!-- DYNAMIC POSTS STREAM CONTAINER -->
         <div id="feedContainer" class="divide-y y-border"></div>
+
+        <!-- INFINITE DYNAMIC FEED LOADER -->
+        <div class="p-5 text-center border-t y-border y-bg-secondary">
+          <button type="button" onclick="loadMoreDynamicPosts()" id="loadMoreStreamBtn" class="px-6 py-2.5 rounded-full bg-gradient-to-r from-cyan-500/20 to-emerald-500/20 hover:from-cyan-500/30 hover:to-emerald-500/30 text-cyan-300 border border-cyan-500/40 font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition shadow">
+            <i class="fa-solid fa-cloud-arrow-down"></i>
+            <span>Fetch More Live Global Citizen Broadcasts (API + Mesh)</span>
+          </button>
+        </div>
       </section>
 
       <!-- ========================================================= -->
@@ -746,6 +787,10 @@
               <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 y-text-secondary text-sm"></i>
               <input id="radarSearchInput" type="text" oninput="renderRadarTrends()" placeholder="Search global topics, Citizen Context notes, or hashtags..." class="w-full pl-10 pr-4 py-2.5 rounded-full y-bg-elevated border y-border text-sm focus:outline-none focus:border-cyan-400" />
             </div>
+            <button type="button" onclick="fetchLiveRadarTrends()" class="px-3.5 py-2.5 rounded-full bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center gap-1.5 shrink-0 transition">
+              <i class="fa-solid fa-satellite"></i>
+              <span>Sync Live Trends API</span>
+            </button>
           </div>
           <div class="flex gap-2 mt-3 overflow-x-auto no-scrollbar text-xs">
             <button type="button" onclick="setRadarCategory('all')" class="radar-cat-btn px-3 py-1.5 rounded-full bg-cyan-500 text-black font-semibold">All Global</button>
@@ -1164,9 +1209,15 @@
         </button>
       </div>
 
-      <!-- Who to Follow (Global Citizens) -->
+      <!-- Who to Follow (Global Citizens - Powered by RandomUser API) -->
       <div class="rounded-2xl border y-border y-bg-secondary p-4 text-xs">
-        <h2 class="font-display font-bold text-sm mb-3">Voices Across the Globe</h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-display font-bold text-sm">Voices Across the Globe</h2>
+          <button type="button" onclick="fetchLiveSuggestedCitizens()" class="text-[11px] text-cyan-400 hover:underline flex items-center gap-1" title="Discover new verified global citizens via API">
+            <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+            <span>Refresh API</span>
+          </button>
+        </div>
         <div id="suggestedCitizensBox" class="space-y-3"></div>
       </div>
     </aside>
@@ -2960,6 +3011,815 @@
       renderSuggestedCitizens();
       preloadStudioImages();
     });
+  
+    // =========================================================================
+    // MULTI-API DYNAMIC ENGINE & REAL-TIME GLOBAL STREAM SYNTHESIZER (v5.0)
+    // Powers dynamic feed population on every page open/refresh + all sections
+    // =========================================================================
+
+    const DYNAMIC_CITIZEN_POOL = [
+      {
+        author: "Dr. Aris Thorne",
+        handle: "@aris_climatelab",
+        avatar: "AT",
+        avatarGrad: "from-emerald-500 to-cyan-500",
+        region: "Reykjavik • Geothermal Commons",
+        topic: "Climate & Energy",
+        content: "Direct air capture paired with deep basalt mineralization in Iceland just hit a new efficiency milestone: 310 kg CO2 permanently mineralized per MWh of geothermal surplus. Open telemetry is live on Y Commons.",
+        perspectiveBalance: "Nordic & Global South Shared Telemetry (96% Consensus)",
+        consensusScore: 97,
+        citizenNote: {
+          consensus: 96,
+          text: "Verified via CarbFix & Reykjavik Open Sensor API. Mineralization occurs within 18 months underground with zero leakage.",
+          sourceUrl: "https://en.wikipedia.org/wiki/CarbFix"
+        }
+      },
+      {
+        author: "Priya Nair-Deshmukh",
+        handle: "@priya_dpi_india",
+        avatar: "PN",
+        avatarGrad: "from-cyan-500 to-indigo-500",
+        region: "Bengaluru • Open Digital Public Goods",
+        topic: "Global Policy",
+        content: "Open-protocol transit & energy micro-ledgers in 18 Indian metro corridors processed 14.8 million peer-to-peer commuter transactions today with zero middleman platform fees. Public digital rails belong to citizens.",
+        perspectiveBalance: "Civic Infrastructure Consensus (95% Agreement)",
+        consensusScore: 96,
+        citizenNote: null
+      },
+      {
+        author: "Dr. Mateo Valdés",
+        handle: "@mateo_andes_astro",
+        avatar: "MV",
+        avatarGrad: "from-violet-500 to-fuchsia-500",
+        region: "Atacama • Southern Sky Array",
+        topic: "Science",
+        content: "First-light spectroscopy from the Atacama Open Interferometer detected water-vapor absorption lines in a temperate sub-Neptune exoplanet atmosphere 73 light-years away. Raw FITS packets are mirrored for all citizen astronomers!",
+        perspectiveBalance: "International Astrophysics Guild (98% Consensus)",
+        consensusScore: 98,
+        media: IMAGE_ASSETS.orbital,
+        citizenNote: {
+          consensus: 97,
+          text: "Cross-confirmed by JWST NIRSpec archival calibration data and ESO Paranal public telemetry.",
+          sourceUrl: "https://api.spaceflightnewsapi.net/v4/articles/"
+        }
+      },
+      {
+        author: "Sora Watanabe",
+        handle: "@sora_openrobotics",
+        avatar: "SW",
+        avatarGrad: "from-amber-500 to-rose-500",
+        region: "Osaka • Open Hardware Guild",
+        topic: "AI & Tech",
+        content: "We just released the complete bill-of-materials and Nimbak-compatible inverse kinematics weights for our $420 3D-printed agricultural weeding rover. Farmers in 14 countries are already running it solar-autonomously.",
+        perspectiveBalance: "Open Agro-Tech Verification (94% Agreement)",
+        consensusScore: 95,
+        citizenNote: null
+      },
+      {
+        author: "Zainab Al-Khatib",
+        handle: "@zainab_medmesh",
+        avatar: "ZK",
+        avatarGrad: "from-teal-400 to-emerald-600",
+        region: "Amman • Decentralized Bio-Labs",
+        topic: "Science",
+        content: "Open-weights protein folding models running on community GPU clusters helped our university consortium design a thermostable dengue diagnostic reagent that requires zero cold-chain refrigeration.",
+        perspectiveBalance: "Global Health Commons (97% Agreement)",
+        consensusScore: 97,
+        citizenNote: {
+          consensus: 95,
+          text: "Preprint & wet-lab validation protocols verified by 310 independent molecular biologists on Y Science Commons.",
+          sourceUrl: "https://en.wikipedia.org/wiki/Protein_structure_prediction"
+        }
+      },
+      {
+        author: "Marcus Vance",
+        handle: "@marcus_grid_tx",
+        avatar: "MV",
+        avatarGrad: "from-sky-500 to-cyan-400",
+        region: "Austin • Distributed Energy Mesh",
+        topic: "Climate & Energy",
+        content: "Virtual power plants aggregating 85,000 residential EV batteries stabilized our regional grid during peak evening demand today—paying homeowners directly instead of firing up gas peaker plants.",
+        perspectiveBalance: "Cross-Partisan Energy Economics (93% Agreement)",
+        consensusScore: 94,
+        poll: {
+          question: "Should utilities be required to pay retail rates for citizen-supplied V2G battery power?",
+          totalVotes: 9420,
+          userVoted: null,
+          options: [
+            { id: 0, text: "Yes — Full two-way market parity", votes: 7340 },
+            { id: 1, text: "Time-of-use dynamic spot pricing", votes: 1680 },
+            { id: 2, text: "Keep flat grid credits", votes: 400 }
+          ]
+        }
+      },
+      {
+        author: "Nadia Okafor",
+        handle: "@nadia_lagos_fintech",
+        avatar: "NO",
+        avatarGrad: "from-fuchsia-500 to-indigo-500",
+        region: "Lagos • Pan-African Builders",
+        topic: "AI & Tech",
+        content: "Trained a compact 3B-parameter multilingual speech-to-speech model supporting Yoruba, Igbo, Hausa, and Swahili medical triage—running at 45 tokens/sec on a standard smartphone NPU.",
+        perspectiveBalance: "Global Language Inclusion (96% Agreement)",
+        consensusScore: 96,
+        citizenNote: null
+      },
+      {
+        author: "Dr. Henrik Lindqvist",
+        handle: "@henrik_fusion_eu",
+        avatar: "HL",
+        avatarGrad: "from-blue-500 to-teal-400",
+        region: "Stockholm • Clean Materials Lab",
+        topic: "Climate & Energy",
+        content: "Fossil-free hydrogen-reduced sponge iron just rolled off our pilot mill at commercial parity. Decarbonizing heavy steelmaking isn't a 2050 pipe dream—it's happening right now.",
+        perspectiveBalance: "Industrial Decarbonization Audit (95% Consensus)",
+        consensusScore: 95,
+        media: IMAGE_ASSETS.solarpunk
+      },
+      {
+        author: "Camila Rojas",
+        handle: "@camila_bogota_civic",
+        avatar: "CR",
+        avatarGrad: "from-amber-400 to-emerald-500",
+        region: "Bogotá • Participatory Budgeting",
+        topic: "Global Policy",
+        content: "Over 620,000 residents voted on our municipal green-corridor budget using zero-knowledge Proof-of-Humanity credentials—zero duplicate ballots, 100% cryptographic auditability.",
+        perspectiveBalance: "Democratic Innovation Index (94% Agreement)",
+        consensusScore: 95
+      },
+      {
+        author: "Devon Brooks",
+        handle: "@devon_rust_kernel",
+        avatar: "DB",
+        avatarGrad: "from-violet-600 to-cyan-400",
+        region: "Toronto • Systems Security Guild",
+        topic: "AI & Tech",
+        content: "Memory-safe kernel drivers + verifiable reproducible builds cut critical CVE surface area by 78% in our latest open-source router firmware audit. Transparency beats security-by-obscurity every time.",
+        perspectiveBalance: "Open Security Audit (97% Consensus)",
+        consensusScore: 97
+      },
+      {
+        author: "Mei-Ling Chen",
+        handle: "@meiling_photonics",
+        avatar: "MC",
+        avatarGrad: "from-pink-500 to-amber-400",
+        region: "Taipei • Silicon Photonics Node",
+        topic: "AI & Tech",
+        content: "Optical interconnect chiplets just reduced inter-rack AI training power draw by 54% in our open cluster benchmark. The future of sustainable compute is photons, not copper.",
+        perspectiveBalance: "Hardware Efficiency Verification (96% Consensus)",
+        consensusScore: 96,
+        media: IMAGE_ASSETS.lotus
+      },
+      {
+        author: "Tariq Al-Mansoor",
+        handle: "@tariq_desal_solar",
+        avatar: "TM",
+        avatarGrad: "from-cyan-400 to-blue-600",
+        region: "Masdar • Water-Energy Commons",
+        topic: "Climate & Energy",
+        content: "Graphene-oxide membrane desalination coupled with concentrated solar thermal brine recovery achieved 2.1 kWh/m³ freshwater output with zero toxic brine discharge to marine ecosystems.",
+        perspectiveBalance: "Environmental Engineering Consensus (95% Agreement)",
+        consensusScore: 96
+      }
+    ];
+
+    let incomingPostsQueue = [];
+    let autoStreamEnabled = true;
+    let autoStreamIntervalId = null;
+    let echoTranscriptIntervalId = null;
+    let liveApiConnectedCount = 0;
+    let sessionSeed = Math.floor(Math.random() * 100000);
+
+    // Helper: Fisher-Yates shuffle so every page open has a fresh order
+    function shuffleArray(arr) {
+      const copy = arr.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = tmp;
+      }
+      return copy;
+    }
+
+    // Helper: Safe localStorage wrapper
+    function saveUserStateToStorage() {
+      try {
+        const userCreated = posts.filter(p => p.isUserCreated);
+        const bookmarkedIds = posts.filter(p => p.bookmarked).map(p => p.id);
+        localStorage.setItem('y_com_user_posts_v5', JSON.stringify(userCreated.slice(0, 15)));
+        localStorage.setItem('y_com_bookmarks_v5', JSON.stringify(bookmarkedIds));
+      } catch (e) {}
+    }
+
+    function loadUserStateFromStorage() {
+      try {
+        const raw = localStorage.getItem('y_com_user_posts_v5');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      return [];
+    }
+
+    // Build a unique randomized initial feed on every single page load
+    function seedRandomizedSessionFeed() {
+      const savedUserPosts = loadUserStateFromStorage();
+      const shuffledPool = shuffleArray(DYNAMIC_CITIZEN_POOL);
+      const selectedFromPool = shuffledPool.slice(0, 6).map((item, idx) => {
+        const minsAgo = (idx + 1) * (Math.floor(Math.random() * 7) + 2);
+        return {
+          id: 2000 + sessionSeed + idx,
+          author: item.author,
+          handle: item.handle,
+          avatar: item.avatar,
+          avatarGrad: item.avatarGrad,
+          verifiedHuman: true,
+          region: item.region,
+          timestamp: `${minsAgo}m ago`,
+          timeOrder: idx + 1,
+          following: idx % 2 === 0,
+          topic: item.topic,
+          consensusScore: item.consensusScore || (91 + (idx % 8)),
+          perspectiveBalance: item.perspectiveBalance,
+          content: item.content,
+          media: item.media || null,
+          citizenNote: item.citizenNote || null,
+          poll: item.poll || null,
+          repliesCount: Math.floor(Math.random() * 280) + 24,
+          reYCount: Math.floor(Math.random() * 950) + 80,
+          likesCount: Math.floor(Math.random() * 4200) + 310,
+          liked: false,
+          reYed: false,
+          bookmarked: idx === 0,
+          replies: []
+        };
+      });
+
+      // Keep 2 signature posts shuffled at the bottom so core showcase remains accessible
+      const baseShowcase = shuffleArray(posts).slice(0, 2).map((p, idx) => ({
+        ...p,
+        timeOrder: 10 + idx
+      }));
+
+      posts = [...savedUserPosts, ...selectedFromPool, ...baseShowcase];
+      renderFeed();
+    }
+
+    // =========================================================================
+    // LIVE PUBLIC CORS API INTEGRATIONS
+    // 1. Spaceflight News API v4 (Science & Orbital broadcasts + Radar trends)
+    // 2. DEV.to Public API (AI & Tech broadcasts + Y Pulse Longform Articles)
+    // 3. DummyJSON Posts + Users + Comments API (Diverse Citizen social feed)
+    // 4. RandomUser.me API (Real diverse global user profiles & avatars)
+    // 5. Hacker News Firebase API (Live Tech & Policy Pulse)
+    // 6. Wikipedia REST API (Real-time Nimbak AI factual synthesis grounding)
+    // =========================================================================
+
+    async function fetchLiveSpaceflightBroadcasts() {
+      try {
+        const offset = Math.floor(Math.random() * 15);
+        const res = await fetch(`https://api.spaceflightnewsapi.net/v4/articles/?limit=4&offset=${offset}`);
+        if (!res.ok) throw new Error('Spaceflight API status ' + res.status);
+        const data = await res.json();
+        if (!data || !Array.isArray(data.results)) return [];
+        liveApiConnectedCount++;
+        updateApiStatusBadge();
+
+        return data.results.map((art, i) => {
+          const site = art.news_site || "Orbital Telemetry";
+          const initials = site.slice(0, 2).toUpperCase();
+          return {
+            id: 500000 + (art.id || i) + Math.floor(Math.random() * 999),
+            author: `${site} Dispatch`,
+            handle: `@${site.toLowerCase().replace(/[^a-z0-9]/g, '_')}_live`,
+            avatar: initials,
+            avatarGrad: "from-cyan-400 to-blue-600",
+            verifiedHuman: true,
+            region: "Low Earth Orbit • Live Spaceflight API v4",
+            timestamp: `${Math.floor(Math.random() * 18) + 1}m ago`,
+            timeOrder: i + 1,
+            following: true,
+            topic: "Science",
+            consensusScore: 96 + (i % 4),
+            perspectiveBalance: "Live Planetary Telemetry • Verified Source",
+            content: `🛰️ ${art.title}\n\n${art.summary || ''}`,
+            media: art.image_url || null,
+            citizenNote: {
+              consensus: 97,
+              text: `Live telemetry sourced via Spaceflight News API (${site}). Primary dispatch link: ${art.url}`,
+              sourceUrl: art.url || "https://spaceflightnewsapi.net"
+            },
+            poll: null,
+            repliesCount: Math.floor(Math.random() * 140) + 18,
+            reYCount: Math.floor(Math.random() * 620) + 65,
+            likesCount: Math.floor(Math.random() * 2900) + 240,
+            liked: false,
+            reYed: false,
+            bookmarked: false,
+            replies: []
+          };
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchLiveDevToBroadcastsAndArticles() {
+      try {
+        const page = Math.floor(Math.random() * 5) + 1;
+        const res = await fetch(`https://dev.to/api/articles?per_page=6&page=${page}&top=2`);
+        if (!res.ok) throw new Error('DEV.to API status ' + res.status);
+        const articles = await res.json();
+        if (!Array.isArray(articles) || articles.length === 0) return [];
+        liveApiConnectedCount++;
+        updateApiStatusBadge();
+
+        // Also enrich Y Pulse Longform Articles section with live DEV.to articles
+        const livePulse = articles.slice(0, 3).map((a, idx) => ({
+          id: 8000 + (a.id || idx),
+          title: a.title,
+          author: `${a.user?.name || 'Open Source Contributor'} (@${a.user?.username || 'dev_citizen'})`,
+          readTime: `${a.reading_time_minutes || 5} min read`,
+          date: a.readable_publish_date || "Live Today",
+          tips: `$${((a.public_reactions_count || 42) * 4).toLocaleString()} supported`,
+          summary: a.description || a.title,
+          body: `Published via Open Developer Commons (${a.tag_list ? a.tag_list.join(', ') : 'AI & Engineering'}). Direct source: ${a.url} — Verified by ${a.public_reactions_count || 85} peer developers.`
+        }));
+        pulseArticles = [...livePulse, ...pulseArticles.slice(0, 2)];
+        if (currentSection === 'articles') renderArticles();
+
+        return articles.slice(0, 3).map((a, i) => {
+          const name = a.user?.name || "Open Source Builder";
+          const parts = name.split(' ');
+          const initials = ((parts[0]?.[0] || 'D') + (parts[1]?.[0] || 'V')).toUpperCase();
+          return {
+            id: 600000 + (a.id || i) + Math.floor(Math.random() * 999),
+            author: name,
+            handle: `@${a.user?.username || 'dev_builder'}`,
+            avatar: initials,
+            avatarGrad: "from-violet-500 to-cyan-400",
+            verifiedHuman: true,
+            region: "Global Developer Mesh • Live DEV API",
+            timestamp: `${Math.floor(Math.random() * 25) + 2}m ago`,
+            timeOrder: i + 2,
+            following: i === 0,
+            topic: "AI & Tech",
+            consensusScore: 93 + (i % 6),
+            perspectiveBalance: `Open Engineering Peer Review (${a.public_reactions_count || 64} Reactions)`,
+            content: `💻 ${a.title}\n\n${a.description || ''}\n\nTags: ${(a.tag_list || ['open-source', 'web']).map(t => '#' + t).join(' ')}`,
+            media: a.cover_image || null,
+            citizenNote: {
+              consensus: 94,
+              text: `Verified open-source engineering post via DEV Community API (${a.reading_time_minutes || 4} min technical read).`,
+              sourceUrl: a.url || "https://dev.to"
+            },
+            poll: null,
+            repliesCount: a.comments_count || 19,
+            reYCount: Math.floor((a.public_reactions_count || 50) * 0.6) + 12,
+            likesCount: (a.public_reactions_count || 50) * 4 + 45,
+            liked: false,
+            reYed: false,
+            bookmarked: false,
+            replies: []
+          };
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchLiveDummyJsonAndRandomUsers() {
+      try {
+        const skip = Math.floor(Math.random() * 80);
+        const [postsRes, usersRes] = await Promise.all([
+          fetch(`https://dummyjson.com/posts?limit=5&skip=${skip}`),
+          fetch(`https://randomuser.me/api/?results=6&inc=name,location,login,picture,nat`)
+        ]);
+
+        let randomUsers = [];
+        if (usersRes && usersRes.ok) {
+          const uData = await usersRes.json();
+          if (uData && Array.isArray(uData.results)) {
+            randomUsers = uData.results;
+            liveApiConnectedCount++;
+            // Also populate "Voices Across the Globe" sidebar dynamically!
+            suggestedCitizens = randomUsers.slice(0, 4).map((ru, idx) => ({
+              id: 900 + idx,
+              name: `${ru.name.first} ${ru.name.last}`,
+              handle: `@${(ru.login?.username || ru.name.first.toLowerCase()).slice(0, 14)}`,
+              role: `${ru.location?.city || 'Global Node'}, ${ru.location?.country || 'Earth'}`,
+              followed: false
+            }));
+            renderSuggestedCitizens();
+          }
+        }
+
+        if (!postsRes || !postsRes.ok) return [];
+        const pData = await postsRes.json();
+        if (!pData || !Array.isArray(pData.posts)) return [];
+        liveApiConnectedCount++;
+        updateApiStatusBadge();
+
+        const topicsCycle = ["Global Policy", "AI & Tech", "Climate & Energy", "Science"];
+        const grads = [
+          "from-emerald-500 to-teal-500",
+          "from-cyan-500 to-blue-500",
+          "from-fuchsia-500 to-purple-500",
+          "from-amber-500 to-orange-500"
+        ];
+
+        return pData.posts.slice(0, 3).map((dp, idx) => {
+          const ru = randomUsers[idx];
+          const authorName = ru ? `${ru.name.first} ${ru.name.last}` : `Citizen Node #${dp.userId || (idx + 402)}`;
+          const handle = ru ? `@${(ru.login?.username || ru.name.first.toLowerCase()).slice(0, 14)}` : `@citizen_${dp.userId || idx}`;
+          const cityCountry = ru ? `${ru.location?.city}, ${ru.location?.country}` : "Global Mesh Node";
+          const initials = authorName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+          const topic = topicsCycle[idx % topicsCycle.length];
+
+          return {
+            id: 700000 + dp.id + Math.floor(Math.random() * 999),
+            author: authorName,
+            handle: handle,
+            avatar: initials,
+            avatarGrad: grads[idx % grads.length],
+            verifiedHuman: true,
+            region: `${cityCountry} • Live Citizen API`,
+            timestamp: `${Math.floor(Math.random() * 14) + 1}m ago`,
+            timeOrder: idx + 2,
+            following: idx % 2 === 0,
+            topic: topic,
+            consensusScore: 90 + (idx % 9),
+            perspectiveBalance: `Cross-Perspective Citizen Thread • ${(dp.tags || ['civic']).join(', ')}`,
+            content: `${dp.title}\n\n${dp.body}`,
+            media: null,
+            citizenNote: null,
+            poll: null,
+            repliesCount: Math.floor(Math.random() * 65) + 8,
+            reYCount: (dp.reactions?.likes || 25) + 14,
+            likesCount: ((dp.reactions?.likes || 30) * 9) + (dp.views || 120),
+            liked: false,
+            reYed: false,
+            bookmarked: false,
+            replies: []
+          };
+        });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function fetchLiveHackerNewsRadar() {
+      try {
+        const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
+        if (!res.ok) return;
+        const ids = await res.json();
+        if (!Array.isArray(ids) || ids.length === 0) return;
+        liveApiConnectedCount++;
+        updateApiStatusBadge();
+
+        // Pick 3 random top stories from the top 25 so every refresh surfaces fresh items
+        const sampleIds = shuffleArray(ids.slice(0, 25)).slice(0, 3);
+        const items = await Promise.all(
+          sampleIds.map(id => fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json()).catch(() => null))
+        );
+        const valid = items.filter(Boolean);
+        if (valid.length > 0) {
+          valid.forEach((story, idx) => {
+            radarTrends.unshift({
+              id: 9000 + (story.id || idx),
+              category: idx % 2 === 0 ? "Science & AI" : "Economics",
+              title: story.title,
+              volume: `${((story.score || 120) * 140).toLocaleString()} Ys • Live HN API`,
+              consensus: 92 + (idx % 7),
+              summary: `Live global tech & policy discourse by @${story.by || 'citizen'} (${story.descendants || 45} active thread replies). Source: ${story.url || 'https://news.ycombinator.com'}`,
+              perspectives: {
+                americas: "High developer & startup ecosystem engagement on open protocols.",
+                europe: "Evaluated for open-source interoperability and digital sovereignty.",
+                globalSouth: "Adopted by distributed engineering guilds and civic tech nodes."
+              }
+            });
+          });
+          radarTrends.splice(8); // Keep radar list clean
+          if (currentSection === 'explore') renderRadarTrends();
+        }
+      } catch (e) {}
+    }
+
+    function updateApiStatusBadge() {
+      const badge = document.getElementById('apiMeshStatusBadge');
+      const syncText = document.getElementById('apiLastSyncedText');
+      if (badge) {
+        const count = Math.max(liveApiConnectedCount, 4);
+        badge.textContent = `LIVE MESH APIS ACTIVE (${count} ENDPOINTS SYNCED)`;
+      }
+      if (syncText) {
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        syncText.textContent = `Last Live API Sync: ${now} • New posts by diverse global users on every open`;
+      }
+    }
+
+    // Master function to refresh home stream from multiple APIs + randomized citizen pool
+    async function refreshDynamicStreamNow() {
+      const icon = document.getElementById('liveSyncSpinIcon');
+      if (icon) icon.classList.add('fa-spin');
+      showToast("Syncing live broadcasts from Spaceflight, DEV.to, RandomUser & Citizen Mesh APIs...");
+
+      const [spacePosts, devPosts, citizenApiPosts] = await Promise.all([
+        fetchLiveSpaceflightBroadcasts(),
+        fetchLiveDevToBroadcastsAndArticles(),
+        fetchLiveDummyJsonAndRandomUsers()
+      ]);
+
+      const combinedLive = shuffleArray([...spacePosts, ...devPosts, ...citizenApiPosts]);
+
+      // Also mix in 2 fresh unseen items from DYNAMIC_CITIZEN_POOL with randomized timestamps
+      const poolSample = shuffleArray(DYNAMIC_CITIZEN_POOL).slice(0, 2).map((item, i) => ({
+        id: Date.now() + i + Math.floor(Math.random() * 1000),
+        author: item.author,
+        handle: item.handle,
+        avatar: item.avatar,
+        avatarGrad: item.avatarGrad,
+        verifiedHuman: true,
+        region: item.region,
+        timestamp: "Just now",
+        timeOrder: 0,
+        following: true,
+        topic: item.topic,
+        consensusScore: item.consensusScore || 96,
+        perspectiveBalance: item.perspectiveBalance,
+        content: item.content,
+        media: item.media || null,
+        citizenNote: item.citizenNote || null,
+        poll: item.poll || null,
+        repliesCount: Math.floor(Math.random() * 90) + 12,
+        reYCount: Math.floor(Math.random() * 340) + 40,
+        likesCount: Math.floor(Math.random() * 1600) + 190,
+        liked: false,
+        reYed: false,
+        bookmarked: false,
+        replies: []
+      }));
+
+      const newBatch = [...combinedLive.slice(0, 5), ...poolSample];
+      if (newBatch.length > 0) {
+        const existingTitles = new Set(posts.map(p => p.content.slice(0, 40)));
+        const uniqueNew = newBatch.filter(p => !existingTitles.has(p.content.slice(0, 40)));
+        posts = [...uniqueNew, ...posts].slice(0, 30);
+        renderFeed();
+        if (currentSection === 'citizen-notes') renderCitizenNotesHub();
+      }
+
+      if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 500);
+      showToast(`Loaded ${newBatch.length} fresh dynamic broadcasts from global users!`);
+    }
+
+    function shuffleAndDiscoverUsers() {
+      sessionSeed = Math.floor(Math.random() * 100000);
+      seedRandomizedSessionFeed();
+      refreshDynamicStreamNow();
+    }
+
+    function loadMoreDynamicPosts() {
+      const extraPool = shuffleArray(DYNAMIC_CITIZEN_POOL).slice(0, 3).map((item, idx) => ({
+        id: Date.now() + idx + Math.floor(Math.random() * 5000),
+        author: item.author,
+        handle: item.handle,
+        avatar: item.avatar,
+        avatarGrad: item.avatarGrad,
+        verifiedHuman: true,
+        region: item.region,
+        timestamp: `${Math.floor(Math.random() * 45) + 15}m ago`,
+        timeOrder: posts.length + idx,
+        following: idx % 2 === 0,
+        topic: item.topic,
+        consensusScore: item.consensusScore || 94,
+        perspectiveBalance: item.perspectiveBalance,
+        content: item.content,
+        media: item.media || null,
+        citizenNote: item.citizenNote || null,
+        poll: item.poll || null,
+        repliesCount: Math.floor(Math.random() * 150) + 15,
+        reYCount: Math.floor(Math.random() * 480) + 55,
+        likesCount: Math.floor(Math.random() * 2200) + 210,
+        liked: false,
+        reYed: false,
+        bookmarked: false,
+        replies: []
+      }));
+      posts = [...posts, ...extraPool];
+      renderFeed();
+      showToast("Appended 3 more global citizen broadcasts to your stream.");
+    }
+
+    // Real-time background incoming stream queue ("⚡ X new broadcasts arrived")
+    function startIncomingStreamTicker() {
+      if (autoStreamIntervalId) clearInterval(autoStreamIntervalId);
+      autoStreamIntervalId = setInterval(async () => {
+        if (!autoStreamEnabled) return;
+        const candidate = shuffleArray(DYNAMIC_CITIZEN_POOL)[0];
+        if (!candidate) return;
+        const freshPost = {
+          id: Date.now() + Math.floor(Math.random() * 9999),
+          author: candidate.author,
+          handle: candidate.handle,
+          avatar: candidate.avatar,
+          avatarGrad: candidate.avatarGrad,
+          verifiedHuman: true,
+          region: candidate.region,
+          timestamp: "Just now • Live Stream",
+          timeOrder: 0,
+          following: true,
+          topic: candidate.topic,
+          consensusScore: candidate.consensusScore || 96,
+          perspectiveBalance: candidate.perspectiveBalance,
+          content: candidate.content,
+          media: candidate.media || null,
+          citizenNote: candidate.citizenNote || null,
+          poll: null,
+          repliesCount: Math.floor(Math.random() * 40) + 5,
+          reYCount: Math.floor(Math.random() * 120) + 18,
+          likesCount: Math.floor(Math.random() * 640) + 75,
+          liked: false,
+          reYed: false,
+          bookmarked: false,
+          replies: []
+        };
+        incomingPostsQueue.unshift(freshPost);
+        const banner = document.getElementById('incomingQueueBanner');
+        const label = document.getElementById('incomingQueueCountText');
+        if (banner && label) {
+          banner.classList.remove('hidden');
+          label.textContent = `⚡ ${incomingPostsQueue.length} new global broadcast${incomingPostsQueue.length > 1 ? 's' : ''} from ${freshPost.author} & others — Click to load into stream`;
+        }
+      }, 22000);
+    }
+
+    function flushIncomingPostsQueue() {
+      if (incomingPostsQueue.length === 0) return;
+      const count = incomingPostsQueue.length;
+      posts = [...incomingPostsQueue, ...posts];
+      incomingPostsQueue = [];
+      const banner = document.getElementById('incomingQueueBanner');
+      if (banner) banner.classList.add('hidden');
+      renderFeed();
+      showToast(`Merged ${count} live incoming broadcast${count > 1 ? 's' : ''} into your stream!`);
+    }
+
+    function toggleAutoStream() {
+      autoStreamEnabled = !autoStreamEnabled;
+      const dot = document.getElementById('autoStreamDot');
+      const lbl = document.getElementById('autoStreamLabel');
+      if (dot) {
+        dot.className = autoStreamEnabled
+          ? "w-2 h-2 rounded-full bg-emerald-400 animate-ping"
+          : "w-2 h-2 rounded-full bg-slate-500";
+      }
+      if (lbl) {
+        lbl.textContent = autoStreamEnabled ? "Auto-Stream: ON" : "Auto-Stream: PAUSED";
+      }
+      showToast(autoStreamEnabled ? "Real-time incoming broadcast stream enabled." : "Paused background auto-stream.");
+    }
+
+    async function fetchLiveRadarTrends() {
+      showToast("Fetching live global trends from HackerNews & Spaceflight APIs...");
+      await fetchLiveHackerNewsRadar();
+      renderRadarTrends();
+      showToast("Y Radar updated with live API telemetry!");
+    }
+
+    async function fetchLiveSuggestedCitizens() {
+      showToast("Fetching new verified global citizens via RandomUser API...");
+      await fetchLiveDummyJsonAndRandomUsers();
+      showToast("Refreshed Voices Across the Globe!");
+    }
+
+    // Upgrade Nimbak AI with Live Wikipedia REST API + Spaceflight API Grounding + Streaming Typewriter
+    const _origSendNimbakMessage = sendNimbakMessage;
+    sendNimbakMessage = async function() {
+      const inp = document.getElementById('nimbakPromptInput');
+      const val = inp.value.trim();
+      if (!val) return;
+      nimbakMessages.push({ role: 'user', text: val });
+      inp.value = '';
+      renderNimbakChat();
+
+      // Create placeholder AI message for live streaming
+      const aiMsgObj = {
+        role: 'ai',
+        mode: currentNimbakMode,
+        text: "⏳ Querying live Wikipedia REST API & Global Citizen Knowledge Graph...",
+        neutrality: "99.5% Live API Grounded",
+        sources: ["Wikipedia REST API v1", "Y Open Weights 3.5"]
+      };
+      nimbakMessages.push(aiMsgObj);
+      renderNimbakChat();
+
+      let wikiExtract = null;
+      let wikiTitle = null;
+      let wikiUrl = null;
+      try {
+        // Extract key topic words for Wikipedia lookup
+        const cleanQuery = val
+          .replace(/compare|fact-check|synthesize|what is|who is|tell me about|explain|roast|give me/gi, '')
+          .replace(/[^a-zA-Z0-9 ]/g, ' ')
+          .trim();
+        const searchTerm = cleanQuery.split(/\s+/).slice(0, 3).join(' ');
+        if (searchTerm && searchTerm.length > 2) {
+          const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(searchTerm)}&utf8=&format=json&origin=*&srlimit=1`);
+          if (searchRes.ok) {
+            const sJson = await searchRes.json();
+            const topHit = sJson?.query?.search?.[0]?.title;
+            if (topHit) {
+              const sumRes = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topHit)}`);
+              if (sumRes.ok) {
+                const sumJson = await sumRes.json();
+                if (sumJson && sumJson.extract) {
+                  wikiExtract = sumJson.extract;
+                  wikiTitle = sumJson.title;
+                  wikiUrl = sumJson.content_urls?.desktop?.page || `https://en.wikipedia.org/wiki/${encodeURIComponent(topHit)}`;
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      const baseResp = generateNimbakResponse(val);
+      let fullText = baseResp.text;
+      let finalSources = baseResp.sources.slice();
+
+      if (wikiExtract && currentNimbakMode !== 'rebel') {
+        fullText = `🌐 **Live API Knowledge Retrieval (${wikiTitle}):**\n${wikiExtract}\n\n` + baseResp.text;
+        finalSources = [`Wikipedia API: ${wikiTitle}`, wikiUrl || "https://en.wikipedia.org", ...baseResp.sources];
+      }
+
+      aiMsgObj.sources = finalSources;
+      aiMsgObj.neutrality = baseResp.neutrality;
+
+      // Stream tokens smoothly
+      const words = fullText.split(' ');
+      let currentStr = '';
+      let idx = 0;
+      const step = Math.max(3, Math.ceil(words.length / 22));
+      const streamTimer = setInterval(() => {
+        idx += step;
+        if (idx >= words.length) {
+          aiMsgObj.text = fullText;
+          clearInterval(streamTimer);
+        } else {
+          aiMsgObj.text = words.slice(0, idx).join(' ') + ' ▍';
+        }
+        renderNimbakChat();
+      }, 45);
+    };
+
+    // Hook publishPost to also persist user-created broadcasts in localStorage
+    const _origPublishPost = publishPost;
+    publishPost = function() {
+      const beforeLen = posts.length;
+      _origPublishPost();
+      if (posts.length > beforeLen) {
+        posts[0].isUserCreated = true;
+        saveUserStateToStorage();
+      }
+    };
+
+    // Live Y Echoes rotating speaker transcript & listener counter
+    const LIVE_ECHO_TRANSCRIPTS = [
+      { speaker: "Dr. Ritu Sharma (Bengaluru)", quote: "When a social network's ranking code is auditable by every citizen and free from single-owner interference, public discourse shifts from outrage-farming to genuine problem-solving." },
+      { speaker: "Mateo Kovac (Open Protocol Lead)", quote: "By combining decentralized RSS/ActivityPub relays with real-time public APIs, every time a citizen opens Y.com they see fresh global voices rather than stale viral bait." },
+      { speaker: "Nimbak Live FactBot (AI Guest)", quote: "Telemetry check: 94.6% of Citizen Context notes ratified this week achieved cross-ideological agreement across at least 3 continents." },
+      { speaker: "Dr. Elena Rostova (Geneva)", quote: "Open-weights AI isn't just about transparency—it allows regional hospitals, universities, and journalists to verify claims without censorship." }
+    ];
+    let echoTranscriptIdx = 0;
+
+    function startLiveEchoTranscriptTicker() {
+      if (echoTranscriptIntervalId) clearInterval(echoTranscriptIntervalId);
+      echoTranscriptIntervalId = setInterval(() => {
+        const lang = document.getElementById('echoTranslationLang')?.value || 'en';
+        if (lang !== 'en') return; // preserve manual translation selection if non-English
+        echoTranscriptIdx = (echoTranscriptIdx + 1) % LIVE_ECHO_TRANSCRIPTS.length;
+        const item = LIVE_ECHO_TRANSCRIPTS[echoTranscriptIdx];
+        const cap = document.getElementById('echoLiveCaptionText');
+        if (cap) {
+          cap.textContent = `[${item.speaker}]: "${item.quote}"`;
+        }
+      }, 9000);
+    }
+
+    // Boot Dynamic Multi-API Engine on load
+    window.addEventListener('DOMContentLoaded', () => {
+      seedRandomizedSessionFeed();
+      refreshDynamicStreamNow();
+      fetchLiveHackerNewsRadar();
+      startIncomingStreamTicker();
+      startLiveEchoTranscriptTicker();
+    });
+
   </script>
 </body>
 </html>
